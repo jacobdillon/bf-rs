@@ -1,0 +1,16 @@
+[package]
+name = "bf-rs"
+version = "0.1.0"
+authors = ["Jacob Dillon <jad340@protonmail.com>"]
+
+[dependencies]
+phf = "0.7.21"
+phf_macros = "0.7.21"
+
+[lib]
+name = "bf"
+path = "src/lib.rs"
+
+[[bin]]
+name = "bf-rs"
+path = "src/main.rs"
