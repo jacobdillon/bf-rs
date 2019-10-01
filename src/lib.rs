@@ -1,7 +1,7 @@
 use std::collections::hash_map::{Entry, HashMap};
 
 #[derive(Clone, Debug)]
-pub enum Command {
+enum Command {
     MovePointerRight,
     MovePointerLeft,
     Increment,
@@ -13,7 +13,7 @@ pub enum Command {
 }
 
 impl Command {
-    pub fn from_char(ch: char) -> Option<Self> {
+    fn from_char(ch: char) -> Option<Self> {
         match ch {
             '>' => Some(Self::MovePointerRight),
             '<' => Some(Self::MovePointerLeft),
