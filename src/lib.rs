@@ -1,11 +1,6 @@
-#![feature(plugin)]
-#![plugin(phf_macros)]
+use std::collections::hash_map::{Entry, HashMap};
 
-extern crate phf;
-
-use std::collections::hash_map::{HashMap, Entry};
-
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 enum Command {
     MovePointerRight,
     MovePointerLeft,
@@ -17,16 +12,21 @@ enum Command {
     JumpEnd,
 }
 
-static CHARACTER_MAP: phf::Map<char, Command> = phf_map! {
-    '>' => Command::MovePointerRight,
-    '<' => Command::MovePointerLeft,
-    '+' => Command::Increment,
-    '-' => Command::Decrement,
-    '.' => Command::Output,
-    ',' => Command::Input,
-    '[' => Command::JumpStart,
-    ']' => Command::JumpEnd,
-};
+impl Command {
+    fn from_char(ch: char) -> Option<Self> {
+        match ch {
+            '>' => Some(Self::MovePointerRight),
+            '<' => Some(Self::MovePointerLeft),
+            '+' => Some(Self::Increment),
+            '-' => Some(Self::Decrement),
+            '.' => Some(Self::Output),
+            ',' => Some(Self::Input),
+            '[' => Some(Self::JumpStart),
+            ']' => Some(Self::JumpEnd),
+            _ => None,
+        }
+    }
+}
 
 #[derive(Debug)]
 struct Program {
@@ -37,83 +37,95 @@ struct Program {
     commands: Vec<Command>,
 }
 
-fn get_commands(s: &str) -> Vec<Command> {
-    s.chars()
-        .filter(|c| CHARACTER_MAP.contains_key(c))
-        .map(|c| CHARACTER_MAP.get(&c).unwrap())
-        .cloned()
-        .collect()
+fn get_commands<S: AsRef<str>>(s: S) -> Vec<Command> {
+    s.as_ref().chars().filter_map(Command::from_char).collect()
 }
 
-pub fn run(s: &str) -> String {
+//args is not a slice because I want to be able to pop off one byte at a time without
+//worrying about where I am in the args
+pub fn run<S: AsRef<str>>(s: S, args: Vec<S>) -> String {
     let mut prgm = Program {
         tape: HashMap::new(),
         pointer: 0,
         jumps: Vec::new(),
         output: Vec::new(),
-        commands: get_commands(s)
+        commands: get_commands(s),
     };
 
-    let mut i = 0;
-    while i < prgm.commands.len() {
-        match prgm.commands[i] {
+    //this doesn't preserve whitespace
+    let mut args: Vec<u8> = args.iter().map(|arg| arg.as_ref().bytes()).flatten().collect();
+
+    let mut pc = 0;
+    while pc < prgm.commands.len() {
+        match prgm.commands[pc] {
             Command::MovePointerRight => {
                 prgm.pointer += 1;
-            },
+            }
 
             Command::MovePointerLeft => {
                 prgm.pointer -= 1;
-            },
+            }
 
-            Command::Increment => {
-                *prgm.tape.entry(prgm.pointer).or_insert(0) += 1
-            },
+            Command::Increment => *prgm.tape.entry(prgm.pointer).or_insert(0) += 1,
 
-            Command::Decrement => {
-                match prgm.tape.entry(prgm.pointer) {
-                    Entry::Occupied(mut entry) => {
-                        if *entry.get() != 0 {
-                            *entry.get_mut() -= 1;
-                        }
-                    },
+            Command::Decrement => match prgm.tape.entry(prgm.pointer) {
+                Entry::Occupied(mut entry) => {
+                    if *entry.get() != 0 {
+                        *entry.get_mut() -= 1;
+                    }
+                }
 
-                    Entry::Vacant(entry) => {
-                        entry.insert(0);
-                    },
+                Entry::Vacant(entry) => {
+                    entry.insert(0);
                 }
             },
 
-            Command::Output => {
-                prgm.output.push(*prgm.tape.get(&prgm.pointer).unwrap_or(&0) as char)
-            },
+            Command::Output => prgm
+                .output
+                .push(*prgm.tape.get(&prgm.pointer).unwrap_or(&0) as char),
 
             Command::Input => {
-
-            },
+                if !args.is_empty() {
+                    prgm.tape.insert(prgm.pointer, args.remove(0));
+                }
+            }
 
             Command::JumpStart => {
-                prgm.jumps.push(i);
-            },
+                prgm.jumps.push(pc);
+            }
 
-            Command::JumpEnd => {
-                match prgm.tape.entry(prgm.pointer) {
-                    Entry::Occupied(entry) => {
-                        if *entry.get() != 0 {
-                            if !prgm.jumps.is_empty() {
-                                i = *prgm.jumps.last().unwrap();
-                            }
-                        } else {
-                            prgm.jumps.pop();
+            Command::JumpEnd => match prgm.tape.entry(prgm.pointer) {
+                Entry::Occupied(entry) => {
+                    if *entry.get() != 0 {
+                        if !prgm.jumps.is_empty() {
+                            pc = *prgm.jumps.last().unwrap();
                         }
-                    },
-
-                    _ => {},
+                    } else {
+                        prgm.jumps.pop();
+                    }
                 }
+
+                _ => {}
             },
         }
 
-        i += 1;
+        pc += 1;
     }
 
     prgm.output.iter().collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::run;
+
+    #[test]
+    fn prints_hello_world() {
+        assert_eq!(&run("++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.", vec![]), "Hello World!\n")
+    }
+
+    #[test]
+    fn reads_helloworld() {
+        assert_eq!(&run("++++++++++[>,.<-]", vec!["hello", "world"]), "helloworld");
+    }
 }
