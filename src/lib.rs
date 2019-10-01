@@ -50,9 +50,9 @@ pub fn run(s: &str) -> String {
         commands: get_commands(s),
     };
 
-    let mut i = 0;
-    while i < prgm.commands.len() {
-        match prgm.commands[i] {
+    let mut pc = 0;
+    while pc < prgm.commands.len() {
+        match prgm.commands[pc] {
             Command::MovePointerRight => {
                 prgm.pointer += 1;
             }
@@ -82,14 +82,14 @@ pub fn run(s: &str) -> String {
             Command::Input => {}
 
             Command::JumpStart => {
-                prgm.jumps.push(i);
+                prgm.jumps.push(pc);
             }
 
             Command::JumpEnd => match prgm.tape.entry(prgm.pointer) {
                 Entry::Occupied(entry) => {
                     if *entry.get() != 0 {
                         if !prgm.jumps.is_empty() {
-                            i = *prgm.jumps.last().unwrap();
+                            pc = *prgm.jumps.last().unwrap();
                         }
                     } else {
                         prgm.jumps.pop();
@@ -100,7 +100,7 @@ pub fn run(s: &str) -> String {
             },
         }
 
-        i += 1;
+        pc += 1;
     }
 
     prgm.output.iter().collect()
