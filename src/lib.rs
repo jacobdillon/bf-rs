@@ -42,7 +42,9 @@ fn get_commands<S: AsRef<str>>(s: S) -> Vec<Command> {
     s.as_ref().chars().filter_map(Command::from_char).collect()
 }
 
-pub fn run<S: AsRef<str>>(s: S) -> String {
+//args is not a slice because I want to be able to pop off one byte at a time without
+//worrying about where I am in the args
+pub fn run<S: AsRef<str>>(s: S, args: Vec<String>) -> String {
     let mut prgm = Program {
         tape: HashMap::new(),
         pointer: 0,
@@ -50,6 +52,9 @@ pub fn run<S: AsRef<str>>(s: S) -> String {
         output: Vec::new(),
         commands: get_commands(s),
     };
+
+    //this doesn't preserve whitespace
+    let mut args: Vec<u8> = args.iter().map(|arg| arg.bytes()).flatten().collect();
 
     let mut pc = 0;
     while pc < prgm.commands.len() {
@@ -81,9 +86,8 @@ pub fn run<S: AsRef<str>>(s: S) -> String {
                 .push(*prgm.tape.get(&prgm.pointer).unwrap_or(&0) as char),
 
             Command::Input => {
-                let byte = io::stdin().bytes().nth(0).expect("An error occurred reading stdin.");
-                if byte.is_ok() {
-                    prgm.tape.insert(prgm.pointer, byte.unwrap());
+                if !args.is_empty() {
+                    prgm.tape.insert(prgm.pointer, args.remove(0));
                 }
             }
 
