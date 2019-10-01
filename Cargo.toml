@@ -1,11 +1,8 @@
 [package]
 name = "bf-rs"
 version = "0.1.0"
-authors = ["Jacob Dillon <jad340@protonmail.com>"]
-
-[dependencies]
-phf = "0.7.21"
-phf_macros = "0.7.21"
+authors = ["Jacob Dillon <jad340@protonmail.com>", "Daniel Shaw <dashaw92@gmail.com"]
+edition = "2018"
 
 [lib]
 name = "bf"

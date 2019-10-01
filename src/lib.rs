@@ -1,12 +1,7 @@
-#![feature(plugin)]
-#![plugin(phf_macros)]
-
-extern crate phf;
-
 use std::collections::hash_map::{HashMap, Entry};
 
 #[derive(Clone,Debug)]
-enum Command {
+pub enum Command {
     MovePointerRight,
     MovePointerLeft,
     Increment,
@@ -17,16 +12,21 @@ enum Command {
     JumpEnd,
 }
 
-static CHARACTER_MAP: phf::Map<char, Command> = phf_map! {
-    '>' => Command::MovePointerRight,
-    '<' => Command::MovePointerLeft,
-    '+' => Command::Increment,
-    '-' => Command::Decrement,
-    '.' => Command::Output,
-    ',' => Command::Input,
-    '[' => Command::JumpStart,
-    ']' => Command::JumpEnd,
-};
+impl Command {
+    pub fn from_char(ch: char) -> Option<Self> {
+        match ch {
+            '>' => Some(Self::MovePointerRight),
+            '<' => Some(Self::MovePointerLeft),
+            '+' => Some(Self::Increment),
+            '-' => Some(Self::Decrement),
+            '.' => Some(Self::Output),
+            ',' => Some(Self::Input),
+            '[' => Some(Self::JumpStart),
+            ']' => Some(Self::JumpEnd),
+            _ => None
+        }
+    }
+}
 
 #[derive(Debug)]
 struct Program {
@@ -39,9 +39,7 @@ struct Program {
 
 fn get_commands(s: &str) -> Vec<Command> {
     s.chars()
-        .filter(|c| CHARACTER_MAP.contains_key(c))
-        .map(|c| CHARACTER_MAP.get(&c).unwrap())
-        .cloned()
+        .filter_map(Command::from_char)
         .collect()
 }
 
