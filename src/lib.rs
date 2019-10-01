@@ -1,4 +1,5 @@
 use std::collections::hash_map::{Entry, HashMap};
+use std::io::{self, Read};
 
 #[derive(Clone, Debug)]
 enum Command {
@@ -79,7 +80,12 @@ pub fn run(s: &str) -> String {
                 .output
                 .push(*prgm.tape.get(&prgm.pointer).unwrap_or(&0) as char),
 
-            Command::Input => {}
+            Command::Input => {
+                let byte = io::stdin().bytes().nth(0).expect("An error occurred reading stdin.");
+                if byte.is_ok() {
+                    prgm.tape.insert(prgm.pointer, byte.unwrap());
+                }
+            }
 
             Command::JumpStart => {
                 prgm.jumps.push(pc);
