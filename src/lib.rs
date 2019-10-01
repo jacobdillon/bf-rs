@@ -38,11 +38,11 @@ struct Program {
     commands: Vec<Command>,
 }
 
-fn get_commands(s: &str) -> Vec<Command> {
-    s.chars().filter_map(Command::from_char).collect()
+fn get_commands<S: AsRef<str>>(s: S) -> Vec<Command> {
+    s.as_ref().chars().filter_map(Command::from_char).collect()
 }
 
-pub fn run(s: &str) -> String {
+pub fn run<S: AsRef<str>>(s: S) -> String {
     let mut prgm = Program {
         tape: HashMap::new(),
         pointer: 0,
