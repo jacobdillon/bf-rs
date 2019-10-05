@@ -43,7 +43,7 @@ fn get_commands<S: AsRef<str>>(s: S) -> Vec<Command> {
 
 //args is not a slice because I want to be able to pop off one byte at a time without
 //worrying about where I am in the args
-pub fn run<S: AsRef<str>>(s: S, args: Vec<S>) -> String {
+pub fn run<S: AsRef<str>>(s: S, args: S) -> String {
     let mut prgm = Program {
         tape: HashMap::new(),
         pointer: 0,
@@ -52,8 +52,7 @@ pub fn run<S: AsRef<str>>(s: S, args: Vec<S>) -> String {
         commands: get_commands(s),
     };
 
-    //this doesn't preserve whitespace
-    let mut args: Vec<u8> = args.iter().map(|arg| arg.as_ref().bytes()).flatten().collect();
+    let mut args: Vec<u8> = args.as_ref().bytes().collect();
 
     let mut pc = 0;
     while pc < prgm.commands.len() {
@@ -121,11 +120,11 @@ mod tests {
 
     #[test]
     fn prints_hello_world() {
-        assert_eq!(&run("++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.", vec![]), "Hello World!\n")
+        assert_eq!(&run("++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.", ""), "Hello World!\n")
     }
 
     #[test]
-    fn reads_helloworld() {
-        assert_eq!(&run("++++++++++[>,.<-]", vec!["hello", "world"]), "helloworld");
+    fn reads_hello_world() {
+        assert_eq!(&run("+++++++++++[>,.<-]", "Hello World"), "Hello World");
     }
 }
