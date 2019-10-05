@@ -41,9 +41,10 @@ fn get_commands<S: AsRef<str>>(s: S) -> Vec<Command> {
     s.as_ref().chars().filter_map(Command::from_char).collect()
 }
 
-//args is not a slice because I want to be able to pop off one byte at a time without
-//worrying about where I am in the args
-pub fn run<S: AsRef<str>>(s: S, args: Vec<S>) -> String {
+pub fn run<S, I>(s: S, args: I) -> String 
+where S: AsRef<str>,
+      I: IntoIterator<Item=S> 
+{
     let mut prgm = Program {
         tape: HashMap::new(),
         pointer: 0,
@@ -52,8 +53,14 @@ pub fn run<S: AsRef<str>>(s: S, args: Vec<S>) -> String {
         commands: get_commands(s),
     };
 
-    //this doesn't preserve whitespace
-    let mut args: Vec<u8> = args.iter().map(|arg| arg.as_ref().bytes()).flatten().collect();
+    let joined = args.into_iter().fold(String::from(""), |acc, item| {
+        if !acc.is_empty() {
+            return acc + " " + &item.as_ref();
+        }
+
+        item.as_ref().to_owned()
+    });
+    let mut args: Vec<u8> = joined.bytes().collect();
 
     let mut pc = 0;
     while pc < prgm.commands.len() {
@@ -125,7 +132,7 @@ mod tests {
     }
 
     #[test]
-    fn reads_helloworld() {
-        assert_eq!(&run("++++++++++[>,.<-]", vec!["hello", "world"]), "helloworld");
+    fn reads_hello_world() {
+        assert_eq!(&run("+++++++++++[>,.<-]", vec!["Hello", "World"]), "Hello World");
     }
 }
